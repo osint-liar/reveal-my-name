@@ -1,10 +1,9 @@
 """Site Schemas"""
 
 from datetime import datetime
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 
-from multidict import CIMultiDictProxy
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel, model_validator, Field
 
 
 class SiteOutputSchema(BaseModel):
@@ -28,9 +27,9 @@ class SiteSchema(BaseModel):
     m_string: str
     m_code: int
     known: List[str]
-    category: str
+    category: str = Field(alias='cat')
     valid: bool
-    post_body: Optional[str]
+    post_body: Optional[str] = None
     uri_check: str
     request_method: str = None
     username: str = None
@@ -44,19 +43,15 @@ class SiteSchema(BaseModel):
     uri_pretty: Optional[str] = None
     error_hint: Optional[str] = None
     response_headers: Optional[str] = None
-    invalid_chars: Optional[str]
+    invalid_chars: Optional[str] = None
 
-
-    @root_validator
-    def set_request_method(cls, values):
-        if values.get('post_body'):
-            values['request_method'] = 'POST'
+    @model_validator(mode='after')
+    def set_request_method(self) -> "SiteSchema":
+        if self.post_body:
+            self.request_method = 'POST'
         else:
-            values['request_method'] = 'GET'
-        return values
-
-    class Config:
-        fields = {'category': 'cat'}
+            self.request_method = 'GET'
+        return self
 
 
 class SitesConfigurationSchema(BaseModel):
